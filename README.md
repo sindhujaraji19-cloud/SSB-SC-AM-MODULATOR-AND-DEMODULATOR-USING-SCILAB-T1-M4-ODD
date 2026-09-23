@@ -46,7 +46,79 @@ To write a program to perform SSBSC modulation and demodulation using SCI LAB an
 Plot the message signal, carrier signal, SSBSC modulated signal, and the recovered signal after demodulation.
 
 ---
+## CODE
+clc;
+clear;
+close;
 
+// Time
+fs = 100000;
+t = 0:1/fs:0.02;
+
+// Message signal
+fm = 500;
+Am = 1;
+m = Am*sin(2*%pi*fm*t);
+
+// Carrier
+fc = 10000;
+Ac = 1;
+c = Ac*cos(2*%pi*fc*t);
+
+// Hilbert transform of message
+M = fft(m);
+N = length(m);
+H = zeros(1,N);
+
+if modulo(N,2) == 0 then
+    H(1) = 1;
+    H(N/2+1) = 1;
+    H(2:N/2) = 2;
+else
+    H(1) = 1;
+    H(2:(N+1)/2) = 2;
+end
+
+mh = real(ifft(M .* H));
+
+// SSB-SC modulation
+// USB
+ssb_usb = m .* cos(2*%pi*fc*t) - ...
+          mh .* sin(2*%pi*fc*t);
+
+// Coherent demodulation
+demod = 2 * ssb_usb .* cos(2*%pi*fc*t);
+
+// Low pass filter
+fc_lp = 1500;
+[b,a] = iir(5,'lp','butt',[fc_lp/fs 0],[]);
+output = flts(demod,b,a);
+
+// Plots
+
+subplot(4,1,1);
+plot(t,m);
+xlabel("Time (s)");
+ylabel("Amplitude");
+title("Message Signal");
+
+subplot(4,1,2);
+plot(t,c);
+xlabel("Time (s)");
+ylabel("Amplitude");
+title("Carrier Signal");
+
+subplot(4,1,3);
+plot(t,ssb_usb);
+xlabel("Time (s)");
+ylabel("Amplitude");
+title("SSB-SC Modulated Signal (USB)");
+
+subplot(4,1,4);
+plot(t,output);
+xlabel("Time (s)");
+ylabel("Amplitude");
+title("Demodulated Signal");
 ## PROCEDURE
 
 * Refer Algorithms and write code for the experiment.
